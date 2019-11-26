@@ -318,17 +318,10 @@ defmodule GenRMQ.Publisher do
   defp publish_result(:ok, :timeout), do: {:error, :confirmation_timeout}
   defp publish_result(error, _), do: error
 
-  defp connect(%{module: module, config: config} = state) do
-    case Connection.open(config[:uri]) do
-      {:ok, conn} ->
-        Process.monitor(conn.pid)
-        {:ok, conn}
-
-      {:error, e} ->
-        Logger.error("[#{module}]: Failed to connect to RabbitMQ, reason: #{inspect(e)}")
-        :timer.sleep(5000)
-        connect(state)
-    end
+  defp connect(%{config: config}) do
+    {:ok, conn} = GenRMQ.Connection.get_connection(config[:uri], %GenRMQ.Connection.Params{})
+    Process.monitor(conn.pid)
+    {:ok, conn}
   end
 
   # Put standard metadata fields to top level, everything else into headers

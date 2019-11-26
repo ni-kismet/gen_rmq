@@ -340,26 +340,12 @@ defmodule GenRMQ.Consumer do
     {:noreply, new_state}
   end
 
-  defp get_connection(%{config: config, module: module, reconnect_attempt: attempt} = state) do
-    case Connection.open(config[:uri]) do
-      {:ok, conn} ->
-        Process.monitor(conn.pid)
-        Map.put(state, :conn, conn)
+  defp get_connection(%{config: config} = state) do
+    connection_params = %GenRMQ.Connection.Params{retry_delay_function: config[:retry_delay_function]}
+    {:ok, conn} = GenRMQ.Connection.get_connection(config[:uri], connection_params)
 
-      {:error, e} ->
-        Logger.error(
-          "[#{module}]: Failed to connect to RabbitMQ with settings: " <>
-            "#{inspect(strip_key(config, :uri))}, reason #{inspect(e)}"
-        )
-
-        retry_delay_fn = config[:retry_delay_function] || (&linear_delay/1)
-        next_attempt = attempt + 1
-        retry_delay_fn.(next_attempt)
-
-        state
-        |> Map.put(:reconnect_attempt, next_attempt)
-        |> get_connection()
-    end
+    Process.monitor(conn.pid)
+    Map.put(state, :conn, conn)
   end
 
   defp open_channels(%{conn: conn} = state) do
