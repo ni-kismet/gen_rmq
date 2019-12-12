@@ -26,7 +26,7 @@ defmodule GenRMQ.Consumer do
   ## Return values
   ### Mandatory:
 
-  `uri` - RabbitMQ uri
+  `uri` - RabbitMQ uri.  Set to nil if using optional host/port/username/password
 
   `queue` - the name of the queue to consume. If it does not exist, it will be created.
 
@@ -37,7 +37,17 @@ defmodule GenRMQ.Consumer do
 
   `prefetch_count` - limit the number of unacknowledged messages.
 
-  ### Optional:
+  ### Optional, used only if `uri` is nil:
+
+  `host` - RabbitMQ host/ip-address
+
+  `port` - RabbitMQ port
+
+  `username` - RabbitMQ username
+
+  `password` - RabbitMQ password
+
+  `ssl_options` -
 
   `queue_ttl` - controls for how long a queue can be unused before it is
   automatically deleted. Unused means the queue has no consumers,
@@ -107,7 +117,12 @@ defmodule GenRMQ.Consumer do
               deadletter_queue: String.t(),
               deadletter_exchange: String.t(),
               deadletter_routing_key: String.t(),
-              queue_max_priority: integer
+              queue_max_priority: integer,
+              host: String.t(),
+              port: integer,
+              username: String.t(),
+              password: String.t(),
+              ssl_options: Keyword.t()
             ]
 
   @doc """
@@ -341,7 +356,7 @@ defmodule GenRMQ.Consumer do
   end
 
   defp get_connection(%{config: config, module: module, reconnect_attempt: attempt} = state) do
-    case Connection.open(config[:uri]) do
+    case GenRMQ.Connection.open(config) do
       {:ok, conn} ->
         Process.monitor(conn.pid)
         Map.put(state, :conn, conn)

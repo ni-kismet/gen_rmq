@@ -57,7 +57,7 @@ defmodule GenRMQ.Publisher do
   def init() do
     [
       exchange: "gen_rmq_exchange",
-      uri: "amqp://guest:guest@localhost:5672"
+      uri: "amqps://guest:guest@localhost:5673"
       app_id: :my_app_id,
       enable_confirmations: true,
       max_confirmation_wait_time: 5_000
@@ -319,7 +319,7 @@ defmodule GenRMQ.Publisher do
   defp publish_result(error, _), do: error
 
   defp connect(%{module: module, config: config} = state) do
-    case Connection.open(config[:uri]) do
+    case GenRMQ.Connection.open(config) do
       {:ok, conn} ->
         Process.monitor(conn.pid)
         {:ok, conn}
